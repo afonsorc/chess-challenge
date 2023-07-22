@@ -21,6 +21,8 @@ namespace ChessChallenge.Application
             EvilBot
         }
 
+        const float botDelay = 0.001f;
+
         // Game state
         int gameID;
         bool isPlaying;
@@ -46,6 +48,7 @@ namespace ChessChallenge.Application
         AutoResetEvent botTaskWaitHandle;
         bool hasBotTaskException;
         ExceptionDispatchInfo botExInfo;
+        
 
         // Other
         readonly BoardUI boardUI;
@@ -228,7 +231,7 @@ namespace ChessChallenge.Application
                 {
                     moveToPlay = chosenMove;
                     isWaitingToPlayMove = true;
-                    const float minDelay = 0.1f;
+                    const float minDelay = botDelay;
                     playMoveTime = lastMoveMadeTime + minDelay;
                 }
                 else
