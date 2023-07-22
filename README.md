@@ -5,6 +5,25 @@ Once submissions close, these bots will battle it out to discover which bot is b
 I will then create a video exploring the implementations of the best and most unique/interesting bots.
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
+## Version History
+
+### 1.0.0
+* Implemented basic depth 1 evaluation function with standard piece weights
+* Prioritize specific moves in the below order
+  * Always go for M1 moves
+  * Capture the most valuable piece available
+  * Check the opposite King
+  * Else random move
+
+## Version Comparison
+
+### 1.0.0 vs RNGBot
+&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
+&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;
+&#x1F426;<br>
++359 =640 -1
+
+
 ## Change Log
 I unfortunately missed a serious bug in the board.GetPiece() function and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed). The latest version is V1.1
 * V1.1 Bug fix for board.GetPiece() function. Added Board.CreateBoardFromFEN() function.
