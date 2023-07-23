@@ -12,10 +12,10 @@ public class MyBot : IChessBot{
 
     public Move Think(Board board, Timer timer)
     {
-        int depth = 4;
+        int depth = 3;
         Console.WriteLine((board.PlyCount + 1) / 2);
         Move bestMove = getBestMove(board, depth);
-        Console.WriteLine("Best Move: " + bestMove);
+        //Console.WriteLine("Best Move: " + bestMove);
         return bestMove;
     }
 
@@ -70,7 +70,7 @@ public class MyBot : IChessBot{
                 max = evaluation;
                 bestMove = move;
             }
-            Console.WriteLine(move + " " + evaluation.ToString("F"));
+            //Console.WriteLine(move + " " + evaluation.ToString("F"));
         }
         Console.WriteLine("Best" + bestMove + " " + max.ToString("F"));
         return bestMove;
