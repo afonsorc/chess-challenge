@@ -21,29 +21,27 @@ I also plan to make a small game that features these most interesting/challengin
 
 ## Version Comparison vs Control
 
-### 1.0.0 vs Control
+### 1.0.0 vs Control (+359 =640 -1)
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;
 &#x1F426;<br>
-+359 =640 -1
 
-### 2.0.0 vs Control
+### 2.0.0 vs Control (+208 =792 -0)
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
-+208 =792 -0
+
 
 ## Version Progress Comparison
 
-### 1.0.0 vs Control
+### 1.0.0 vs Control (+359 =640 -1)
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;
 &#x1F426;<br>
-+359 =640 -1
 
-### 2.0.0 vs 1.0.0
+### 2.0.0 vs 1.0.0 (+291 =709 -0)
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
-+291 =709 -0
+
 
 ## Change Log
 I unfortunately missed a serious bug in the board.GetPiece() and PieceList functions and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed).
