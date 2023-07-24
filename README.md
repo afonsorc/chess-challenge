@@ -5,6 +5,19 @@ Once submissions close, these bots will battle it out to discover which bot is b
 I will then create a video exploring the implementations of the best and most unique/interesting bots.
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
+
+## To Implement:
+- [x] Material evalutation
+- [x] Negamax search
+- [x] Alpha beta search
+- [x] Move ordering and sorting
+- [ ] Some sort of hashing (Zobrist for example)
+- [ ] Transposition Tables (need hashing)
+- [ ] Quiescence search by the end of alphabeta
+- [ ] Repetition/Stalemate check
+- [ ] Dynamic evaluation criteria 
+
+
 ## Version History
 
 ### 1.0.0

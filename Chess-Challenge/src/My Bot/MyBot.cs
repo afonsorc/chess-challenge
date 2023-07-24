@@ -15,7 +15,7 @@ public class MyBot : IChessBot{
 
     public Move Think(Board board, Timer timer){
         
-        int depth = 5;
+        int depth = 4;
         Move bestMove = getBestMove(board, depth);
 
         //if (DEBUG) Console.WriteLine((board.PlyCount + 1) / 2);
