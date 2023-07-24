@@ -17,7 +17,16 @@ I also plan to make a small game that features these most interesting/challengin
 
 ### 2.0.0
 * Implemented NegaMax with custom depth search
+  * Able to run 1000 games at decent speed with depth 4 
 
+### 2.1.0
+* Changed evaluation from floats to ints
+
+### 3.0.0
+* Implemented alpha-beta with ordered moves
+  * Simple move scoring criteria, based on promotions/captures/moved piece
+  * Selection sort on the move list
+  * Able to run 1000 games at decent speed with depth 5
 
 ## Version Comparison vs Control
 
@@ -29,6 +38,10 @@ I also plan to make a small game that features these most interesting/challengin
 ### 2.0.0 vs Control (+208 =792 -0)
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
+
+### 3.0.0 vs Control (+557 =443 -0)
+&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
+&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
 
 
 ## Version Progress Comparison
