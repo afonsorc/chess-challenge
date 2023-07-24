@@ -45,6 +45,9 @@ I also plan to make a small game that features these most interesting/challengin
 * Added quiescence search after alpha-beta to finish capture chain calculations
 * Adjusted piece weights
 
+### 3.2.0
+* Implemented semi Pawn and Knight Square Tables
+
 ## Version Comparison vs Control
 
 ### 1.0.0 vs Control (+359 =640 -1)
@@ -60,17 +63,15 @@ I also plan to make a small game that features these most interesting/challengin
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
 
+### 3.2.0 vs Control (+846 =154 -0)
+&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
+&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
 
 ## Version Progress Comparison
-
-### 1.0.0 vs Control (+359 =640 -1)
-&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
-&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;
-&#x1F426;<br>
-
 ### 2.0.0 vs 1.0.0 (+291 =709 -0)
 &#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;&#x1F40A;
 &#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;&#x1F42A;<br>
+
 
 
 ## Change Log

@@ -1,19 +1,22 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
 
 public class MyBot : IChessBot{
 
-    // Last value for initialization of moves
-    int[] pieceValue = { 100, 320, 325, 500, 975, 10000, 32767 };
+    // PeSTO Piece Square Table
+    int[] pieceValue = { 82, 337, 365, 477, 1025, 10000, 32767 };
 
     public Move Think(Board board, Timer timer){
         
         // depth should be even to end on opponent's turn 
-        int depth = 5;
+        int depth = 4;
+
         Move bestMove = GetBestMove(board, depth);
 
-        Console.WriteLine((board.PlyCount + 1) / 2);
+        //Console.WriteLine((board.PlyCount + 1) / 2);
         Console.WriteLine(bestMove);
+        
         return bestMove;
     }
 
@@ -21,12 +24,36 @@ public class MyBot : IChessBot{
     public int Evaluate(Board board){
 
         int evaluation = 0;
-        if(board.IsDraw()) return 0;
         for(var p = 0; p < 5; p++){
             evaluation += pieceValue[p] * (int)board.GetAllPieceLists()[p].Count;
             evaluation -= pieceValue[p] * (int)board.GetAllPieceLists()[p + 6].Count;
         }
+
+        evaluation += EvaluatePawns(board, true) - EvaluatePawns(board, false);
+        evaluation += EvaluateKnights(board, true) - EvaluateKnights(board, false);
         return board.IsWhiteToMove ? evaluation : -evaluation;
+    }
+
+
+    public int EvaluatePawns(Board board, bool isWhite){
+        
+        int evaluation = 0;
+        var list = board.GetPieceList(PieceType.Pawn, isWhite);
+        for(int p = 0; p < list.Count; p++)
+            if(isWhite) evaluation += (list.GetPiece(p).Square.Rank - 1) * 5;
+            else evaluation += ( 6 - list.GetPiece(p).Square.Rank) * 5;
+        return evaluation;
+    }
+
+    public int EvaluateKnights(Board board, bool isWhite){
+        
+        int evaluation = 0;
+        var list = board.GetPieceList(PieceType.Knight, isWhite);
+        for(int p = 0; p < list.Count; p++){
+            //if ((list.GetPiece(p).Square.Rank == 3 || list.GetPiece(p).Square.Rank == 4) && (list.GetPiece(p).Square.File == 3 || list.GetPiece(p).Square.File == 4)) evaluation += 20;
+            if(list.GetPiece(p).Square.Rank == 0 || list.GetPiece(p).Square.Rank == 7 || list.GetPiece(p).Square.File == 0 || list.GetPiece(p).Square.File == 7) evaluation -= 30;
+        }
+        return evaluation;
     }
 
 
@@ -37,13 +64,19 @@ public class MyBot : IChessBot{
         foreach(Move move in MoveOrdering(board.GetLegalMoves())){
 
             board.MakeMove(move);
+            //ulong positionKey = board.ZobristKey % 100000;
+
             int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
             board.UndoMove(move);
 
             // upper bound beta, opponent will avoid our move
             // lower bound alpha, looking to cut worse moves
-            if(evaluation >= beta) return beta;
-            if(evaluation > alpha) alpha = evaluation;
+            if(evaluation >= beta){
+                return beta;
+            }
+            if(evaluation > alpha){
+                alpha = evaluation;
+            }
         }
         return alpha;
     }
@@ -90,20 +123,15 @@ public class MyBot : IChessBot{
 
     public void SortMoveList(Move[] moves, int[] score){
         
-        //System.Console.WriteLine("UNSORTED");
-        //for(int i = 0; i < moves.Length; i++) System.Console.WriteLine(moves[i] + " " + score[i]);
         for(int i = 0; i < moves.Length; i++){
             int biggestValue = i;
             for(int j = i + 1; j < moves.Length; j++)
                 if(score[j] > score[biggestValue]) biggestValue = j;
             if(biggestValue != i){
-                //System.Console.WriteLine("SWITCH " + moves[i] + " and " + moves[biggestValue]);
                 (moves[i], moves[biggestValue]) = (moves[biggestValue], moves[i]);
                 (score[i], score[biggestValue]) = (score[biggestValue], score[i]);
             }
         }
-        //System.Console.WriteLine("SORTED");
-        //for(int i = 0; i < moves.Length; i++) System.Console.WriteLine(moves[i] + " " + score[i]);
         return;
     }
 
@@ -123,7 +151,7 @@ public class MyBot : IChessBot{
                 max = evaluation;
                 bestMove = move;
             }
-           //Console.WriteLine(move + " " + evaluation);
+           Console.WriteLine(move + " " + evaluation);
         }
         return bestMove;
     }
