@@ -13,7 +13,7 @@ I also plan to make a small game that features these most interesting/challengin
 - [x] Move ordering and sorting
 - [ ] Some sort of hashing (Zobrist for example)
 - [ ] Transposition Tables (need hashing)
-- [ ] Quiescence search by the end of alphabeta
+- [x] Quiescence search by the end of alphabeta
 - [ ] Repetition/Stalemate check
 - [ ] Dynamic evaluation criteria 
 

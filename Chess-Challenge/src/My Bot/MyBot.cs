@@ -8,10 +8,12 @@ public class MyBot : IChessBot{
 
     public Move Think(Board board, Timer timer){
         
+        // depth should be even to end on opponent's turn 
         int depth = 5;
         Move bestMove = GetBestMove(board, depth);
 
-        //if (DEBUG) Console.WriteLine((board.PlyCount + 1) / 2);
+        Console.WriteLine((board.PlyCount + 1) / 2);
+        Console.WriteLine(bestMove);
         return bestMove;
     }
 
@@ -19,6 +21,7 @@ public class MyBot : IChessBot{
     public int Evaluate(Board board){
 
         int evaluation = 0;
+        if(board.IsDraw()) return 0;
         for(var p = 0; p < 5; p++){
             evaluation += pieceValue[p] * (int)board.GetAllPieceLists()[p].Count;
             evaluation -= pieceValue[p] * (int)board.GetAllPieceLists()[p + 6].Count;
@@ -27,18 +30,37 @@ public class MyBot : IChessBot{
     }
 
 
-    public int AlphaBeta(Board board, int depth, int alpha, int beta){
+    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta){
 
-        if (depth == 0) return Evaluate(board);
+        if (depth == 0) return QuiescenceSearch(board, alpha, beta);
 
-        foreach (Move move in MoveOrdering(board.GetLegalMoves())){
+        foreach(Move move in MoveOrdering(board.GetLegalMoves())){
 
             board.MakeMove(move);
-            int evaluation = -AlphaBeta(board, depth - 1, -beta, -alpha);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
             board.UndoMove(move);
 
             // upper bound beta, opponent will avoid our move
             // lower bound alpha, looking to cut worse moves
+            if(evaluation >= beta) return beta;
+            if(evaluation > alpha) alpha = evaluation;
+        }
+        return alpha;
+    }
+
+
+    public int QuiescenceSearch(Board board, int alpha, int beta){
+        
+        int standPat = Evaluate(board);
+        if(standPat >= beta) return beta;
+        if(standPat > alpha) alpha = standPat;
+
+        foreach(Move move in MoveOrdering(board.GetLegalMoves(true))){
+                
+            board.MakeMove(move);
+            int evaluation = -QuiescenceSearch(board, -beta, -alpha);
+            board.UndoMove(move);
+
             if(evaluation >= beta) return beta;
             if(evaluation > alpha) alpha = evaluation;
         }
@@ -94,14 +116,14 @@ public class MyBot : IChessBot{
         foreach (Move move in MoveOrdering(board.GetLegalMoves())){
 
             board.MakeMove(move);
-            int evaluation = -AlphaBeta(board, depth - 1, -pieceValue[5], pieceValue[5]);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -pieceValue[5], pieceValue[5]);
             board.UndoMove(move);
 
             if (evaluation > max){
                 max = evaluation;
                 bestMove = move;
             }
-            //Console.WriteLine(move + " " + evaluation);
+           //Console.WriteLine(move + " " + evaluation);
         }
         return bestMove;
     }
