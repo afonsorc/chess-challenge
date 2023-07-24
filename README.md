@@ -41,6 +41,10 @@ I also plan to make a small game that features these most interesting/challengin
   * Selection sort on the move list
   * Able to run 1000 games at decent speed with depth 5
 
+### 3.1.0
+* Added quiescence search after alpha-beta to finish capture chain calculations
+* Adjusted piece weights
+
 ## Version Comparison vs Control
 
 ### 1.0.0 vs Control (+359 =640 -1)
