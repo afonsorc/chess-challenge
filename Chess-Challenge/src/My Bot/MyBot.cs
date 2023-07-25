@@ -47,7 +47,7 @@ public class MyBot : IChessBot{
         var sw = new Stopwatch();
         Console.WriteLine((board.PlyCount + 1) / 2);
 
-        int max_depth = 4;
+        int max_depth = 6;
         // Taking 00:39.748s for D7
         for(int depth = 1; depth <= max_depth; depth++){
             sw.Start();
@@ -61,7 +61,7 @@ public class MyBot : IChessBot{
         //B: Run stuff you want timed
 
         //System.Console.WriteLine("Stored in TT: " + nTranspositions);
-        //System.Console.WriteLine("Found Transposition: " + nLookups);
+        System.Console.WriteLine("Found Transposition: " + nLookups);
 
         //Console.WriteLine(bestMove);
         //Console.WriteLine(move + " " + evaluation);
@@ -127,7 +127,7 @@ public class MyBot : IChessBot{
 
     public void SortMoveList(Move[] moves, int[] score){
         
-        for(int i = 0; i < moves.Length; i++){
+        for(int i = 0; i < moves.Length - 1; i++){
             int biggestValue = i;
             for(int j = i + 1; j < moves.Length; j++)
                 if(score[j] > score[biggestValue]) biggestValue = j;
@@ -140,26 +140,7 @@ public class MyBot : IChessBot{
     }
 
 
-    public int QuiescenceSearch(Board board, int alpha, int beta){
-        
-        int standPat = Evaluate(board);
-        if(standPat >= beta) return beta;
-        if(standPat > alpha) alpha = standPat;
-
-        foreach(Move move in MoveOrdering(board.GetLegalMoves(true))){
-                
-            board.MakeMove(move);
-            int evaluation = -QuiescenceSearch(board, -beta, -alpha);
-            board.UndoMove(move);
-
-            if(evaluation >= beta) return beta;
-            if(evaluation > alpha) alpha = evaluation;
-        }
-        return alpha;
-    }
-
-
-    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta){
+    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta, bool isQueiescenceSearch){
 
         ulong zobristHash = board.ZobristKey;
         ulong zobristIndex = zobristHash % 1000000;
@@ -171,18 +152,22 @@ public class MyBot : IChessBot{
                 return transpositionTable[zobristIndex].evaluation;
             }
         }
-        
-        if (depth == 0) return QuiescenceSearch(board, alpha, beta);
+
+        if(isQueiescenceSearch){
+            int standPat = Evaluate(board);
+            if(standPat >= beta) return beta;
+            if(standPat > alpha) alpha = standPat;
+        }else if(depth == 0){
+            return AlphaBetaSearch(board, depth, alpha, beta, true);
+        }
 
         int evaluationType = 1;
-        int i = 0;
-        foreach(Move move in MoveOrdering(board.GetLegalMoves())){
-            i++;
+        foreach(Move move in MoveOrdering(board.GetLegalMoves(isQueiescenceSearch))){
             board.MakeMove(move);
             nNodes++;
             //System.Console.Write("  ");
             //ulong positionKey = board.ZobristKey % 100000;
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha, isQueiescenceSearch);
             //System.Console.WriteLine(depth + ". " + move + " " + evaluation);
             board.UndoMove(move);
 
@@ -190,7 +175,6 @@ public class MyBot : IChessBot{
             // lower bound alpha, looking to cut worse moves
             if(evaluation >= beta){
                 nTranspositions++;
-                nCuts += board.GetLegalMoves().Length - i;
                 transpositionTable[zobristIndex] = new Entry(zobristHash, depth, beta, 2);
                 return beta;
             }
@@ -213,7 +197,7 @@ public class MyBot : IChessBot{
         foreach (Move move in MoveOrdering(board.GetLegalMoves())){
             nNodes++;
             board.MakeMove(move);
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000, false);
             board.UndoMove(move);
             //System.Console.WriteLine(depth + ". " + move);
 
