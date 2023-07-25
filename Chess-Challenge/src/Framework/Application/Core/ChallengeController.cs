@@ -23,6 +23,8 @@ namespace ChessChallenge.Application
         }
 
         const float botDelay = 0.001f;
+        public int totalMovesPlayed = 0;
+        public int trueTotalMovesPlayed = 0;
 
         // Game state
         Random rng;
@@ -106,6 +108,7 @@ namespace ChessChallenge.Application
             PlayerBlack.SubscribeToMoveChosenEventIfHuman(OnMoveChosen);
 
             // UI Setup
+            trueTotalMovesPlayed += totalMovesPlayed;
             boardUI.UpdatePosition(board);
             boardUI.ResetSquareColours();
             SetBoardPerspective();
@@ -152,6 +155,7 @@ namespace ChessChallenge.Application
             {
                 API.Timer timer = new(PlayerToMove.TimeRemainingMs);
                 API.Move move = PlayerToMove.Bot.Think(botBoard, timer);
+                totalMovesPlayed++;
                 return new Move(move.RawValue);
             }
             catch (Exception e)
