@@ -1,22 +1,70 @@
 ﻿using ChessChallenge.API;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 public class MyBot : IChessBot{
 
+    public struct Entry{
+        public ulong key = 0;
+        public Move move = Move.NullMove;
+        public int depth = 0;
+        public int evaluation = 0;
+        public int evaluationType = 0;
+    
+        public Entry(ulong key, int depth, int evaluation, int evaluationType){
+            this.key = key;
+            this.move = Move.NullMove;
+            this.depth = depth;
+            this.evaluation = evaluation;
+            this.evaluationType = evaluationType;
+        }
+    }
+
+    public Entry[] transpositionTable = new Entry[1000000];
+    int nTranspositions = 0;
+    int nLookups = 0;
+    Move bestMoveLastIteration = Move.NullMove;
+    int nNodes = 0;
+    public int nCuts = 0;
+
     // PeSTO Piece Square Table
-    int[] pieceValue = { 82, 337, 365, 477, 1025, 10000, 32767 };
+    int[] pieceValue = { 82, 337, 365, 477, 1025, 10000, 30000 };
+
+    
 
     public Move Think(Board board, Timer timer){
         
         // depth should be even to end on opponent's turn 
-        int depth = 4;
+        nTranspositions = 0;
+        nLookups = 0;
+        Move bestMove = Move.NullMove;
+        nNodes = 0;
+        nCuts = 0; 
 
-        Move bestMove = GetBestMove(board, depth);
+        var sw = new Stopwatch();
+        Console.WriteLine((board.PlyCount + 1) / 2);
 
-        //Console.WriteLine((board.PlyCount + 1) / 2);
-        Console.WriteLine(bestMove);
-        
+        int max_depth = 4;
+        // Taking 00:39.748s for D7
+        for(int depth = 1; depth <= max_depth; depth++){
+            sw.Start();
+            bestMove = AlphaBetaSearchRoot(board, depth);
+            sw.Stop();
+            long ticks = sw.ElapsedTicks;
+            int ms = (int)(1000.0 * ticks / Stopwatch.Frequency);
+            System.Console.WriteLine("info depth " + depth + " nodes " + nNodes + " time " + ms + " move " + bestMove);
+        }
+
+        //B: Run stuff you want timed
+
+        //System.Console.WriteLine("Stored in TT: " + nTranspositions);
+        //System.Console.WriteLine("Found Transposition: " + nLookups);
+
+        //Console.WriteLine(bestMove);
+        //Console.WriteLine(move + " " + evaluation);
         return bestMove;
     }
 
@@ -57,28 +105,38 @@ public class MyBot : IChessBot{
     }
 
 
-    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta){
 
-        if (depth == 0) return QuiescenceSearch(board, alpha, beta);
 
-        foreach(Move move in MoveOrdering(board.GetLegalMoves())){
 
-            board.MakeMove(move);
-            //ulong positionKey = board.ZobristKey % 100000;
 
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
-            board.UndoMove(move);
+    public Move[] MoveOrdering(Move[] moves){
 
-            // upper bound beta, opponent will avoid our move
-            // lower bound alpha, looking to cut worse moves
-            if(evaluation >= beta){
-                return beta;
+        //System.Console.WriteLine("BMLI: " + bestMoveLastIteration);
+        int[] moveScore = new int[moves.Length];
+        for(int i = 0; i < moves.Length; i++){
+            
+            if(moves[i] == bestMoveLastIteration) moveScore[i] = 10000;
+            else if(moves[i].IsCapture){
+                moveScore[i] = pieceValue[(int)moves[i].CapturePieceType] - pieceValue[(int)moves[i].MovePieceType];
             }
-            if(evaluation > alpha){
-                alpha = evaluation;
+            else moveScore[i] = -5000;
+        }
+        SortMoveList(moves, moveScore);
+        return moves;
+    }
+
+    public void SortMoveList(Move[] moves, int[] score){
+        
+        for(int i = 0; i < moves.Length; i++){
+            int biggestValue = i;
+            for(int j = i + 1; j < moves.Length; j++)
+                if(score[j] > score[biggestValue]) biggestValue = j;
+            if(biggestValue != i){
+                (moves[i], moves[biggestValue]) = (moves[biggestValue], moves[i]);
+                (score[i], score[biggestValue]) = (score[biggestValue], score[i]);
             }
         }
-        return alpha;
+        return;
     }
 
 
@@ -101,57 +159,70 @@ public class MyBot : IChessBot{
     }
 
 
-    public Move[] MoveOrdering(Move[] moves){
+    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta){
 
-        int[] moveScore = new int[moves.Length];
-        for(int i = 0; i < moves.Length; i++){
-            
-            if(moves[i].IsPromotion && moves[i].IsCapture) moveScore[i] = 10;
-            else if(moves[i].IsPromotion) moveScore[i] = 9;
-            else if(moves[i].IsCapture && (int)moves[i].MovePieceType < (int)moves[i].CapturePieceType) moveScore[i] = 8;
-            else if(moves[i].IsCapture && (int)moves[i].MovePieceType == (int)moves[i].CapturePieceType) moveScore[i] = 7;
-            else if(moves[i].IsCapture && (int)moves[i].MovePieceType > (int)moves[i].CapturePieceType) moveScore[i] = 6;
-            else if(moves[i].MovePieceType == PieceType.Queen) moveScore[i] = 5;
-            else if(moves[i].MovePieceType == PieceType.Rook) moveScore[i] = 4;
-            else if(moves[i].MovePieceType == PieceType.Bishop || moves[i].MovePieceType == PieceType.Knight) moveScore[i] = 3;
-            else if(moves[i].MovePieceType == PieceType.Pawn) moveScore[i] = 2;
-            else moveScore[i] = 1;
-        }
-        SortMoveList(moves, moveScore);
-        return moves;
-    }
+        ulong zobristHash = board.ZobristKey;
+        ulong zobristIndex = zobristHash % 1000000;
 
-    public void SortMoveList(Move[] moves, int[] score){
-        
-        for(int i = 0; i < moves.Length; i++){
-            int biggestValue = i;
-            for(int j = i + 1; j < moves.Length; j++)
-                if(score[j] > score[biggestValue]) biggestValue = j;
-            if(biggestValue != i){
-                (moves[i], moves[biggestValue]) = (moves[biggestValue], moves[i]);
-                (score[i], score[biggestValue]) = (score[biggestValue], score[i]);
+        // check if current board position is on transposition table and store it if it's empty
+        if(transpositionTable[zobristIndex].key == zobristHash){
+            if(transpositionTable[zobristIndex].depth >= depth){
+                nLookups++;
+                return transpositionTable[zobristIndex].evaluation;
             }
         }
-        return;
+        
+        if (depth == 0) return QuiescenceSearch(board, alpha, beta);
+
+        int evaluationType = 1;
+        int i = 0;
+        foreach(Move move in MoveOrdering(board.GetLegalMoves())){
+            i++;
+            board.MakeMove(move);
+            nNodes++;
+            //System.Console.Write("  ");
+            //ulong positionKey = board.ZobristKey % 100000;
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
+            //System.Console.WriteLine(depth + ". " + move + " " + evaluation);
+            board.UndoMove(move);
+
+            // upper bound beta, opponent will avoid our move
+            // lower bound alpha, looking to cut worse moves
+            if(evaluation >= beta){
+                nTranspositions++;
+                nCuts += board.GetLegalMoves().Length - i;
+                transpositionTable[zobristIndex] = new Entry(zobristHash, depth, beta, 2);
+                return beta;
+            }
+            if(evaluation > alpha){
+                evaluationType = 0;
+                alpha = evaluation;
+            }
+        }
+        nTranspositions++;
+        transpositionTable[zobristIndex] = new Entry(zobristHash, depth, alpha, evaluationType);
+        return alpha;
     }
 
 
-    public Move GetBestMove(Board board, int depth){
+    public Move AlphaBetaSearchRoot(Board board, int depth){
 
-        int max = -pieceValue[6];
+        int max = -30000;
         Move bestMove = Move.NullMove;
 
         foreach (Move move in MoveOrdering(board.GetLegalMoves())){
-
+            nNodes++;
             board.MakeMove(move);
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -pieceValue[5], pieceValue[5]);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000);
             board.UndoMove(move);
+            //System.Console.WriteLine(depth + ". " + move);
 
             if (evaluation > max){
                 max = evaluation;
                 bestMove = move;
+                bestMoveLastIteration = move;
             }
-           Console.WriteLine(move + " " + evaluation);
+           //Console.WriteLine(move + " " + evaluation);
         }
         return bestMove;
     }
