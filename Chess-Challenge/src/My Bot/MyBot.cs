@@ -3,9 +3,96 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 public class MyBot : IChessBot{
+
+    /*
+    sbyte[] pstPawn = 
+    {
+        0,  0,  0,  0,  0,  0,  0,  0,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        10, 10, 20, 30, 30, 20, 10, 10,
+        5,  5, 10, 25, 25, 10,  5,  5,
+        0,  0,  0, 20, 20,  0,  0,  0,
+        5, -5,-10,  0,  0,-10, -5,  5,
+        5, 10, 10,-20,-20, 10, 10,  5,
+        0,  0,  0,  0,  0,  0,  0,  0
+    };
+
+    sbyte[] pstKnight = 
+    {
+        -50,-40,-30,-30,-30,-30,-40,-50,
+        -40,-20,  0,  0,  0,  0,-20,-40,
+        -30,  0, 10, 15, 15, 10,  0,-30,
+        -30,  5, 15, 20, 20, 15,  5,-30,
+        -30,  0, 15, 20, 20, 15,  0,-30,
+        -30,  5, 10, 15, 15, 10,  5,-30,
+        -40,-20,  0,  5,  5,  0,-20,-40,
+        -50,-40,-30,-30,-30,-30,-40,-50,
+    };
+
+    sbyte[] pstBishop = 
+    {
+        -20,-10,-10,-10,-10,-10,-10,-20,
+        -10,  0,  0,  0,  0,  0,  0,-10,
+        -10,  0,  5, 10, 10,  5,  0,-10,
+        -10,  5,  5, 10, 10,  5,  5,-10,
+        -10,  0, 10, 10, 10, 10,  0,-10,
+        -10, 10, 10, 10, 10, 10, 10,-10,
+        -10,  5,  0,  0,  0,  0,  5,-10,
+        -20,-10,-10,-10,-10,-10,-10,-20,
+    };
+
+    sbyte[] pstRook = 
+    {
+        0,  0,  0,  0,  0,  0,  0,  0,
+        5, 10, 10, 10, 10, 10, 10,  5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        0,  0,  0,  5,  5,  0,  0,  0
+    };
+
+    sbyte[] pstQueen = 
+    {
+        0,  0,  0,  0,  0,  0,  0,  0,
+        5, 10, 10, 10, 10, 10, 10,  5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        -5,  0,  0,  0,  0,  0,  0, -5,
+        0,  0,  0,  5,  5,  0,  0,  0
+    };
+
+    sbyte[] pstKing = 
+    {
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -30,-40,-40,-50,-50,-40,-40,-30,
+        -20,-30,-30,-40,-40,-30,-30,-20,
+        -10,-20,-20,-20,-20,-20,-20,-10,
+        20, 20,  0,  0,  0,  0, 20, 20,
+        20, 30, 10,  0,  0, 10, 30, 20
+    };
+
+    sbyte[] pstKingEnd = 
+    {
+        -50,-40,-30,-20,-20,-30,-40,-50,
+        -30,-20,-10,  0,  0,-10,-20,-30,
+        -30,-10, 20, 30, 30, 20,-10,-30,
+        -30,-10, 30, 40, 40, 30,-10,-30,
+        -30,-10, 30, 40, 40, 30,-10,-30,
+        -30,-10, 20, 30, 30, 20,-10,-30,
+        -30,-30,  0,  0,  0,  0,-30,-30,
+        -50,-30,-30,-30,-30,-30,-30,-50
+    };*/
+
 
     public struct Entry{
         public ulong key = 0;
@@ -31,7 +118,7 @@ public class MyBot : IChessBot{
     public int nCuts = 0;
 
     // PeSTO Piece Square Table
-    int[] pieceValue = { 82, 337, 365, 477, 1025, 10000, 30000 };
+    int[] pieceValue = { 0, 82, 337, 365, 477, 1025, 10000 };
 
     
 
@@ -61,12 +148,13 @@ public class MyBot : IChessBot{
         //B: Run stuff you want timed
 
         //System.Console.WriteLine("Stored in TT: " + nTranspositions);
-        System.Console.WriteLine("Found Transposition: " + nLookups);
+        //System.Console.WriteLine("Found Transposition: " + nLookups);
 
-        //Console.WriteLine(bestMove);
+        Console.WriteLine(bestMove);
         //Console.WriteLine(move + " " + evaluation);
         return bestMove;
     }
+
 
 
     public int Evaluate(Board board){
@@ -79,10 +167,25 @@ public class MyBot : IChessBot{
 
         evaluation += EvaluatePawns(board, true) - EvaluatePawns(board, false);
         evaluation += EvaluateKnights(board, true) - EvaluateKnights(board, false);
+
+
+        //ulong bitboard = board.GetPieceBitboard(PieceType.Pawn, true);
+        //BitboardHelper.VisualizeBitboard(bitboard);
+        //int eval2 = 0;
+        //int index = 7 - (number % 8) + (number % 8)
+       // System.Console.WriteLine(BitboardHelper.GetNumberOfSetBits(bitboard));
+       // for(int i = 0; i < BitboardHelper.GetNumberOfSetBits(bitboard); i++){
+       //     System.Console.WriteLine(eval2);
+       //     //eval2 += pstPawn[BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard)];
+       // }
+       // System.Console.WriteLine(eval2);
+       // board.GetPieceList(PieceType.Pawn, true);
+
+
         return board.IsWhiteToMove ? evaluation : -evaluation;
     }
 
-
+    // To be replaced by proper PSTs
     public int EvaluatePawns(Board board, bool isWhite){
         
         int evaluation = 0;
@@ -93,6 +196,7 @@ public class MyBot : IChessBot{
         return evaluation;
     }
 
+    // To be replaced by proper PSTs
     public int EvaluateKnights(Board board, bool isWhite){
         
         int evaluation = 0;
@@ -106,12 +210,8 @@ public class MyBot : IChessBot{
 
 
 
+    public Span<Move> MoveOrdering(Span<Move> moves){
 
-
-
-    public Move[] MoveOrdering(Move[] moves){
-
-        //System.Console.WriteLine("BMLI: " + bestMoveLastIteration);
         int[] moveScore = new int[moves.Length];
         for(int i = 0; i < moves.Length; i++){
             
@@ -125,7 +225,7 @@ public class MyBot : IChessBot{
         return moves;
     }
 
-    public void SortMoveList(Move[] moves, int[] score){
+    public void SortMoveList(Span<Move> moves, int[] score){
         
         for(int i = 0; i < moves.Length - 1; i++){
             int biggestValue = i;
@@ -140,10 +240,17 @@ public class MyBot : IChessBot{
     }
 
 
-    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta, bool isQueiescenceSearch){
+    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta){
 
         ulong zobristHash = board.ZobristKey;
         ulong zobristIndex = zobristHash % 1000000;
+        bool isQueiescenceSearch = (depth <= 0);
+
+        // Repetition occurs more often so we check it first
+        // Might implement penalty for draw or contempt factor
+        if(board.IsRepeatedPosition()) return 0;
+        if(board.FiftyMoveCounter >= 100 || board.IsInsufficientMaterial()) return 0;
+
 
         // check if current board position is on transposition table and store it if it's empty
         if(transpositionTable[zobristIndex].key == zobristHash){
@@ -153,21 +260,24 @@ public class MyBot : IChessBot{
             }
         }
 
+
         if(isQueiescenceSearch){
             int standPat = Evaluate(board);
             if(standPat >= beta) return beta;
             if(standPat > alpha) alpha = standPat;
-        }else if(depth == 0){
-            return AlphaBetaSearch(board, depth, alpha, beta, true);
         }
 
+        // Check for checkmate or stalemate
+        Move[] moves = board.GetLegalMoves(isQueiescenceSearch);
+        if(board.GetLegalMoves().Length == 0) return board.IsInCheck() ? -10000 : 0;
+
         int evaluationType = 1;
-        foreach(Move move in MoveOrdering(board.GetLegalMoves(isQueiescenceSearch))){
+        foreach(Move move in MoveOrdering(moves)){
             board.MakeMove(move);
-            nNodes++;
+            if(!isQueiescenceSearch)nNodes++;
             //System.Console.Write("  ");
             //ulong positionKey = board.ZobristKey % 100000;
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha, isQueiescenceSearch);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
             //System.Console.WriteLine(depth + ". " + move + " " + evaluation);
             board.UndoMove(move);
 
@@ -193,11 +303,11 @@ public class MyBot : IChessBot{
 
         int max = -30000;
         Move bestMove = Move.NullMove;
-
+        
         foreach (Move move in MoveOrdering(board.GetLegalMoves())){
             nNodes++;
             board.MakeMove(move);
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000, false);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000);
             board.UndoMove(move);
             //System.Console.WriteLine(depth + ". " + move);
 
