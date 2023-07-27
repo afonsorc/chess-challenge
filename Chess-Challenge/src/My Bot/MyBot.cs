@@ -4,94 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.ConstrainedExecution;
 using System.Text.RegularExpressions;
 
 public class MyBot : IChessBot{
-
-    /*
-    sbyte[] pstPawn = 
-    {
-        0,  0,  0,  0,  0,  0,  0,  0,
-        50, 50, 50, 50, 50, 50, 50, 50,
-        10, 10, 20, 30, 30, 20, 10, 10,
-        5,  5, 10, 25, 25, 10,  5,  5,
-        0,  0,  0, 20, 20,  0,  0,  0,
-        5, -5,-10,  0,  0,-10, -5,  5,
-        5, 10, 10,-20,-20, 10, 10,  5,
-        0,  0,  0,  0,  0,  0,  0,  0
-    };
-
-    sbyte[] pstKnight = 
-    {
-        -50,-40,-30,-30,-30,-30,-40,-50,
-        -40,-20,  0,  0,  0,  0,-20,-40,
-        -30,  0, 10, 15, 15, 10,  0,-30,
-        -30,  5, 15, 20, 20, 15,  5,-30,
-        -30,  0, 15, 20, 20, 15,  0,-30,
-        -30,  5, 10, 15, 15, 10,  5,-30,
-        -40,-20,  0,  5,  5,  0,-20,-40,
-        -50,-40,-30,-30,-30,-30,-40,-50,
-    };
-
-    sbyte[] pstBishop = 
-    {
-        -20,-10,-10,-10,-10,-10,-10,-20,
-        -10,  0,  0,  0,  0,  0,  0,-10,
-        -10,  0,  5, 10, 10,  5,  0,-10,
-        -10,  5,  5, 10, 10,  5,  5,-10,
-        -10,  0, 10, 10, 10, 10,  0,-10,
-        -10, 10, 10, 10, 10, 10, 10,-10,
-        -10,  5,  0,  0,  0,  0,  5,-10,
-        -20,-10,-10,-10,-10,-10,-10,-20,
-    };
-
-    sbyte[] pstRook = 
-    {
-        0,  0,  0,  0,  0,  0,  0,  0,
-        5, 10, 10, 10, 10, 10, 10,  5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        0,  0,  0,  5,  5,  0,  0,  0
-    };
-
-    sbyte[] pstQueen = 
-    {
-        0,  0,  0,  0,  0,  0,  0,  0,
-        5, 10, 10, 10, 10, 10, 10,  5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        -5,  0,  0,  0,  0,  0,  0, -5,
-        0,  0,  0,  5,  5,  0,  0,  0
-    };
-
-    sbyte[] pstKing = 
-    {
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -20,-30,-30,-40,-40,-30,-30,-20,
-        -10,-20,-20,-20,-20,-20,-20,-10,
-        20, 20,  0,  0,  0,  0, 20, 20,
-        20, 30, 10,  0,  0, 10, 30, 20
-    };
-
-    sbyte[] pstKingEnd = 
-    {
-        -50,-40,-30,-20,-20,-30,-40,-50,
-        -30,-20,-10,  0,  0,-10,-20,-30,
-        -30,-10, 20, 30, 30, 20,-10,-30,
-        -30,-10, 30, 40, 40, 30,-10,-30,
-        -30,-10, 30, 40, 40, 30,-10,-30,
-        -30,-10, 20, 30, 30, 20,-10,-30,
-        -30,-30,  0,  0,  0,  0,-30,-30,
-        -50,-30,-30,-30,-30,-30,-30,-50
-    };*/
 
 
     public struct Entry{
@@ -101,18 +17,18 @@ public class MyBot : IChessBot{
         public int evaluation = 0;
         public int evaluationType = 0;
     
-        public Entry(ulong key, int depth, int evaluation, int evaluationType){
+        public Entry(ulong key, Move move, int depth, int evaluation, int evaluationType){
             this.key = key;
-            this.move = Move.NullMove;
+            this.move = move;
             this.depth = depth;
             this.evaluation = evaluation;
             this.evaluationType = evaluationType;
         }
     }
 
-    public Entry[] transpositionTable = new Entry[1000000];
-    int nTranspositions = 0;
-    int nLookups = 0;
+    const bool TIMER = false; 
+    const int ttSize = 1000000;
+    public Entry[] transpositionTable = new Entry[ttSize];
     Move bestMoveLastIteration = Move.NullMove;
     int nNodes = 0;
     public int nCuts = 0;
@@ -125,11 +41,8 @@ public class MyBot : IChessBot{
     public Move Think(Board board, Timer timer){
         
         // depth should be even to end on opponent's turn 
-        nTranspositions = 0;
-        nLookups = 0;
         Move bestMove = Move.NullMove;
         nNodes = 0;
-        nCuts = 0; 
 
         var sw = new Stopwatch();
         Console.WriteLine((board.PlyCount + 1) / 2);
@@ -138,20 +51,48 @@ public class MyBot : IChessBot{
         // Taking 00:39.748s for D7
         for(int depth = 1; depth <= max_depth; depth++){
             sw.Start();
-            bestMove = AlphaBetaSearchRoot(board, depth);
+            bestMove = AlphaBetaSearchRoot(board, depth, timer);
             sw.Stop();
             long ticks = sw.ElapsedTicks;
             int ms = (int)(1000.0 * ticks / Stopwatch.Frequency);
             System.Console.WriteLine("info depth " + depth + " nodes " + nNodes + " time " + ms + " move " + bestMove);
+            if(timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30 && TIMER)
+                break;
         }
-
-        //B: Run stuff you want timed
 
         //System.Console.WriteLine("Stored in TT: " + nTranspositions);
         //System.Console.WriteLine("Found Transposition: " + nLookups);
 
         Console.WriteLine(bestMove);
         //Console.WriteLine(move + " " + evaluation);
+/*
+        // SET PSTs
+        ulong[] setPawn = {0, 3617008641903833650, 723412809732590090, 361706447983740165, 86234890240, 358869600189152005, 363113628838791685, 0};
+        ulong[] setKnight = {14832572258041583566, 15558810812658215896, 16285027312364814306, 16286440206365557986, 16285032831482003426, 16286434687248368866, 14832572258041583566, 15558810834216938456};
+        ulong[] setBishop = {17002766404949505516, 17726168133330272246, 17726173674006183926, 17727581048889738486, 17726179171564650486, 17728993921331759606, 17727575508213826806, 17002766404949505516};
+        ulong[] setRook = {0, 363113758191127045, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 21558722560};
+        ulong[] setQueen = {17002766426508228076, 17726168133330272246, 17726173652447461366, 18086461622637101051, 18086461622637101056, 17726173652447462646, 17726168133330599926, 17002766426508228076};
+        ulong[] setKing = {16273713057448318946, 16273713057448318946, 16273713057448318946, 16273713057448318946, 16997114785829085676, 17720516557327297526, 1446781380292776980, 1449607125176819220};
+
+
+        ulong[,] test = new ulong[6, 8];
+        for(int rank = 0; rank < 8; rank++){
+            for(int file = 0; file < 8; file++){
+                test[0, rank] += (ulong)pstP[rank, file] << (8 * file);
+                test[1, rank] += (ulong)pstN[rank, file] << (8 * file);
+                test[2, rank] += (ulong)pstB[rank, file] << (8 * file);
+                test[3, rank] += (ulong)pstR[rank, file] << (8 * file);
+                test[4, rank] += (ulong)pstQ[rank, file] << (8 * file);
+                test[5, rank] += (ulong)pstK[rank, file] << (8 * file);
+            }
+        }
+
+        for(int i = 0; i < 6; i++){
+            for(int j = 0; j < 8; j++)
+                System.Console.Write(test[i,j] + ", ");
+            System.Console.WriteLine();
+        }*/
+
         return bestMove;
     }
 
@@ -160,14 +101,19 @@ public class MyBot : IChessBot{
     public int Evaluate(Board board){
 
         int evaluation = 0;
-        for(var p = 0; p < 5; p++){
-            evaluation += pieceValue[p] * (int)board.GetAllPieceLists()[p].Count;
-            evaluation -= pieceValue[p] * (int)board.GetAllPieceLists()[p + 6].Count;
+        for(var p = 1; p < 6; p++){
+            evaluation += pieceValue[p] * (int)board.GetAllPieceLists()[p - 1].Count;
+            evaluation -= pieceValue[p] * (int)board.GetAllPieceLists()[p + 5].Count;
         }
+
+        //ulong bitboard = board.GetPieceBitboard(PieceType.Pawn, true);
+        //for(int i = 0; i < BitboardHelper.GetNumberOfSetBits(bitboard); i++){
+        //    evaluation += setPawn[];
+        //}
 
         evaluation += EvaluatePawns(board, true) - EvaluatePawns(board, false);
         evaluation += EvaluateKnights(board, true) - EvaluateKnights(board, false);
-
+//
 
         //ulong bitboard = board.GetPieceBitboard(PieceType.Pawn, true);
         //BitboardHelper.VisualizeBitboard(bitboard);
@@ -191,8 +137,8 @@ public class MyBot : IChessBot{
         int evaluation = 0;
         var list = board.GetPieceList(PieceType.Pawn, isWhite);
         for(int p = 0; p < list.Count; p++)
-            if(isWhite) evaluation += (list.GetPiece(p).Square.Rank - 1) * 5;
-            else evaluation += ( 6 - list.GetPiece(p).Square.Rank) * 5;
+            if(isWhite) evaluation += (list.GetPiece(p).Square.Rank - 1) * 10;
+            else evaluation += ( 6 - list.GetPiece(p).Square.Rank) * 10;
         return evaluation;
     }
 
@@ -203,29 +149,12 @@ public class MyBot : IChessBot{
         var list = board.GetPieceList(PieceType.Knight, isWhite);
         for(int p = 0; p < list.Count; p++){
             //if ((list.GetPiece(p).Square.Rank == 3 || list.GetPiece(p).Square.Rank == 4) && (list.GetPiece(p).Square.File == 3 || list.GetPiece(p).Square.File == 4)) evaluation += 20;
-            if(list.GetPiece(p).Square.Rank == 0 || list.GetPiece(p).Square.Rank == 7 || list.GetPiece(p).Square.File == 0 || list.GetPiece(p).Square.File == 7) evaluation -= 30;
+            if(list.GetPiece(p).Square.Rank == 0 || list.GetPiece(p).Square.Rank == 7 || list.GetPiece(p).Square.File == 0 || list.GetPiece(p).Square.File == 7) evaluation -= 20;
         }
         return evaluation;
     }
 
-
-
-    public Span<Move> MoveOrdering(Span<Move> moves){
-
-        int[] moveScore = new int[moves.Length];
-        for(int i = 0; i < moves.Length; i++){
-            
-            if(moves[i] == bestMoveLastIteration) moveScore[i] = 10000;
-            else if(moves[i].IsCapture){
-                moveScore[i] = pieceValue[(int)moves[i].CapturePieceType] - pieceValue[(int)moves[i].MovePieceType];
-            }
-            else moveScore[i] = -5000;
-        }
-        SortMoveList(moves, moveScore);
-        return moves;
-    }
-
-    public void SortMoveList(Span<Move> moves, int[] score){
+    public void SortMoveList(Move[] moves, int[] score){
         
         for(int i = 0; i < moves.Length - 1; i++){
             int biggestValue = i;
@@ -240,74 +169,93 @@ public class MyBot : IChessBot{
     }
 
 
-    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta){
-
-        ulong zobristHash = board.ZobristKey;
-        ulong zobristIndex = zobristHash % 1000000;
-        bool isQueiescenceSearch = (depth <= 0);
+    public int AlphaBetaSearch(Board board, int depth, int alpha, int beta, Timer timer){
 
         // Repetition occurs more often so we check it first
         // Might implement penalty for draw or contempt factor
         if(board.IsRepeatedPosition()) return 0;
         if(board.FiftyMoveCounter >= 100 || board.IsInsufficientMaterial()) return 0;
 
+        ulong zobristHash = board.ZobristKey;
+        ulong zobristIndex = zobristHash % ttSize;
+        Entry entry = transpositionTable[zobristIndex];
 
-        // check if current board position is on transposition table and store it if it's empty
-        if(transpositionTable[zobristIndex].key == zobristHash){
-            if(transpositionTable[zobristIndex].depth >= depth){
-                nLookups++;
-                return transpositionTable[zobristIndex].evaluation;
-            }
-        }
+        // check if current board position is on transposition table and return it if valid
+        if(entry.key == zobristHash)
+            if(entry.depth >= depth)
+                if(entry.evaluationType == 0 || (entry.evaluationType == 1 && entry.evaluation <= alpha) || (entry.evaluationType == 2 && entry.evaluation >= beta))
+                    return entry.evaluation;
 
 
+        bool isQueiescenceSearch = (depth <= 0);
         if(isQueiescenceSearch){
             int standPat = Evaluate(board);
-            if(standPat >= beta) return beta;
+            if(standPat >= beta){
+                transpositionTable[zobristIndex] = new Entry(zobristHash, bestMoveLastIteration, depth, beta, 2);
+                return beta;
+            }
+            //int delta = 100;
+            //if(standPat < alpha - delta) return alpha;
             if(standPat > alpha) alpha = standPat;
         }
 
-        // Check for checkmate or stalemate
         Move[] moves = board.GetLegalMoves(isQueiescenceSearch);
-        if(board.GetLegalMoves().Length == 0) return board.IsInCheck() ? -10000 : 0;
+        int[] moveScore = new int[moves.Length];
+
+        for(int i = 0; i < moves.Length; i++){
+            //System.Console.WriteLine(moves[i]);
+            //System.Console.WriteLine(entry.move);
+            if(moves[i] == entry.move){
+                moveScore[i] = 10000;         
+            }
+            else if(moves[i].IsCapture) moveScore[i] = (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
+            else moveScore[i] = -10000;
+        }
+
+        SortMoveList(moves, moveScore);
 
         int evaluationType = 1;
-        foreach(Move move in MoveOrdering(moves)){
+        Move bestMove = Move.NullMove;
+        foreach(Move move in moves){
+
+            if(timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30 && TIMER) return 10000;
+
             board.MakeMove(move);
-            if(!isQueiescenceSearch)nNodes++;
-            //System.Console.Write("  ");
-            //ulong positionKey = board.ZobristKey % 100000;
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha);
+            nNodes++;
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -beta, -alpha, timer);
             //System.Console.WriteLine(depth + ". " + move + " " + evaluation);
             board.UndoMove(move);
 
             // upper bound beta, opponent will avoid our move
             // lower bound alpha, looking to cut worse moves
             if(evaluation >= beta){
-                nTranspositions++;
-                transpositionTable[zobristIndex] = new Entry(zobristHash, depth, beta, 2);
+                transpositionTable[zobristIndex] = new Entry(zobristHash, move, depth, beta, 2);
                 return beta;
             }
             if(evaluation > alpha){
                 evaluationType = 0;
                 alpha = evaluation;
+                bestMove = move;
             }
         }
-        nTranspositions++;
-        transpositionTable[zobristIndex] = new Entry(zobristHash, depth, alpha, evaluationType);
+
+        // Check for checkmate or stalemate
+        if(board.GetLegalMoves().Length == 0) return board.IsInCheck() ? -10000 : 0;
+
+        transpositionTable[zobristIndex] = new Entry(zobristHash, bestMove, depth, alpha, evaluationType);
         return alpha;
     }
 
 
-    public Move AlphaBetaSearchRoot(Board board, int depth){
+    public Move AlphaBetaSearchRoot(Board board, int depth, Timer timer){
 
         int max = -30000;
         Move bestMove = Move.NullMove;
         
-        foreach (Move move in MoveOrdering(board.GetLegalMoves())){
+        foreach (Move move in board.GetLegalMoves()){
             nNodes++;
             board.MakeMove(move);
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -10000, 10000, timer);
             board.UndoMove(move);
             //System.Console.WriteLine(depth + ". " + move);
 
@@ -318,6 +266,7 @@ public class MyBot : IChessBot{
             }
            //Console.WriteLine(move + " " + evaluation);
         }
+        Console.WriteLine("BEST: " + bestMove + " " + max);
         return bestMove;
     }
 }
