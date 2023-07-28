@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.ConstrainedExecution;
+using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 
 public class MyBot : IChessBot{
@@ -27,24 +28,15 @@ public class MyBot : IChessBot{
     }
 
     const bool TIMER = true; 
-    const int ttSize = 1000000;
+    const int ttSize = 8388608;
     public Entry[] transpositionTable = new Entry[ttSize];
     Move bestMoveLastIteration = Move.NullMove;
     int nNodes = 0;
     public int nCuts = 0;
 
     // PeSTO Piece Square Table
-    int[] pieceValue = { 0, 82, 337, 365, 477, 1025, 10000 };
-
-    
-        // SET PSTs
-        ulong[] setPawn = {0, 3617008641903833650, 723412809732590090, 361706447983740165, 86234890240, 358869600189152005, 363113628838791685, 0};
-        ulong[] setKnight = {14832572258041583566, 15558810812658215896, 16285027312364814306, 16286440206365557986, 16285032831482003426, 16286434687248368866, 14832572258041583566, 15558810834216938456};
-        ulong[] setBishop = {17002766404949505516, 17726168133330272246, 17726173674006183926, 17727581048889738486, 17726179171564650486, 17728993921331759606, 17727575508213826806, 17002766404949505516};
-        ulong[] setRook = {0, 363113758191127045, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 21558722560};
-        ulong[] setQueen = {17002766426508228076, 17726168133330272246, 17726173652447461366, 18086461622637101051, 18086461622637101056, 17726173652447462646, 17726168133330599926, 17002766426508228076};
-        ulong[] setKing = {16273713057448318946, 16273713057448318946, 16273713057448318946, 16273713057448318946, 16997114785829085676, 17720516557327297526, 1446781380292776980, 1449607125176819220};
-
+    int[] pieceValue = { 0, 100, 320, 340, 500, 900, 10000 };
+    readonly ulong[,] setPST = {{0, 3617008641903833650, 723412809732590090, 361706447983740165, 86234890240, 358869600189152005, 363113628838791685, 0},{14832572258041583566, 15558810812658215896, 16285027312364814306, 16286440206365557986, 16285032831482003426, 16286434687248368866, 14832572258041583566, 15558810834216938456},{17002766404949505516, 17726168133330272246, 17726173674006183926, 17727581048889738486, 17726179171564650486, 17728993921331759606, 17727575508213826806, 17002766404949505516},{0, 363113758191127045, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 21558722560},{17002766426508228076, 17726168133330272246, 17726173652447461366, 18086461622637101051, 18086461622637101056, 17726173652447462646, 17726168133330599926, 17002766426508228076},{16273713057448318946, 16273713057448318946, 16273713057448318946, 16273713057448318946, 16997114785829085676, 17720516557327297526, 1446781380292776980, 1449607125176819220}};
 
 
     public Move Think(Board board, Timer timer){
@@ -56,7 +48,7 @@ public class MyBot : IChessBot{
         var sw = new Stopwatch();
         Console.WriteLine((board.PlyCount + 1) / 2);
 
-        int max_depth = 6;
+        int max_depth = 10;
         // Taking 00:39.748s for D7
         for(int depth = 1; depth <= max_depth; depth++){
             sw.Start();
@@ -74,8 +66,6 @@ public class MyBot : IChessBot{
 
         Console.WriteLine(bestMove);
         //Console.WriteLine(move + " " + evaluation);
-
-
 /*
         ulong[,] test = new ulong[6, 8];
         for(int rank = 0; rank < 8; rank++){
@@ -95,15 +85,12 @@ public class MyBot : IChessBot{
             System.Console.WriteLine();
         }*/
 
-        return bestMove;
+        return bestMove == Move.NullMove ? board.GetLegalMoves()[0] : bestMove;
     }
 
 
-    public sbyte GetIndexPST(ulong[] bitboard, int index){
-        int row = 7 - (index/8);
-        int fileShift = 56 - (8 * (index%8));
-        sbyte final =  (sbyte)((bitboard[row] >> fileShift) & (1 << 8) - 1);
-        return final;
+    public sbyte GetValuePST(ulong[,] bitboard, int piece, int index){
+        return (sbyte)((bitboard[piece, index / 8] >> (56 - (8 * (index % 8)))) & (1 << 8) - 1);;
     }
 
     public int Evaluate(Board board){
@@ -113,78 +100,16 @@ public class MyBot : IChessBot{
             evaluation += pieceValue[p] * (int)board.GetAllPieceLists()[p - 1].Count;
             evaluation -= pieceValue[p] * (int)board.GetAllPieceLists()[p + 5].Count;
         }
-        
-        ulong bitboard = board.GetPieceBitboard(PieceType.Pawn, true);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation += GetIndexPST(setPawn, index);
+
+        for(var piece = PieceType.Pawn; piece <= PieceType.King; piece++){
+            ulong white = board.GetPieceBitboard(piece, true);
+            while(white != 0)
+                evaluation += GetValuePST(setPST, (int)piece - 1, BitboardHelper.ClearAndGetIndexOfLSB(ref white));
+            ulong black = board.GetPieceBitboard(piece, false);
+            while(black != 0)
+                evaluation -= GetValuePST(setPST, (int)piece - 1, BitboardHelper.ClearAndGetIndexOfLSB(ref black) ^ 56);
         }
 
-        bitboard = board.GetPieceBitboard(PieceType.Pawn, false);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation -= GetIndexPST(setPawn, index ^ 56);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Knight, true);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation += GetIndexPST(setKnight, index);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Knight, false);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation -= GetIndexPST(setKnight, index ^ 56);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Bishop, true);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation += GetIndexPST(setBishop, index);
-        }
-        
-        bitboard = board.GetPieceBitboard(PieceType.Bishop, false);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation -= GetIndexPST(setBishop, index ^ 56);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Rook, true);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation += GetIndexPST(setRook, index);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Rook, false);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation -= GetIndexPST(setRook, index ^ 56);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Queen, true);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation += GetIndexPST(setQueen, index);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.Queen, false);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation -= GetIndexPST(setQueen, index ^ 56);
-        }
-        
-        bitboard = board.GetPieceBitboard(PieceType.King, true);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation += GetIndexPST(setKing, index);
-        }
-
-        bitboard = board.GetPieceBitboard(PieceType.King, false);
-        while(bitboard != 0){
-            int index = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard);
-            evaluation -= GetIndexPST(setKing, index ^ 56);
-        }
 /*
         if(!board.HasKingsideCastleRight(true) && !board.HasQueensideCastleRight(true)){
             evaluation -= 150;
@@ -235,10 +160,11 @@ public class MyBot : IChessBot{
                 }
 
 
-        bool isQueiescenceSearch = (depth <= 0);
+        bool isQueiescenceSearch = depth <= 0;
         if(isQueiescenceSearch){
             int standPat = Evaluate(board);
             if(standPat >= beta){
+                //System.Console.WriteLine(standPat);
                 return beta;
             }
             //int delta = 100;
@@ -297,7 +223,7 @@ public class MyBot : IChessBot{
 
     public Move AlphaBetaSearchRoot(Board board, int depth, Timer timer){
 
-        int max = -30000;
+        int max = -20000;
         
         ulong zobristHash = board.ZobristKey;
         ulong zobristIndex = zobristHash % ttSize;
@@ -316,7 +242,11 @@ public class MyBot : IChessBot{
                 //System.Console.WriteLine("ENTRY: " + entry.move);
                 moveScore[i] = 10000;         
             }
-            else if(moves[i].IsCapture) moveScore[i] = (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
+            else if(moves[i].IsCapture){
+                int capture = (int)moves[i].CapturePieceType;
+                int move = (int)moves[i].MovePieceType;
+                moveScore[i] = pieceValue[capture] * capture - pieceValue[move] * move;
+            }
             else moveScore[i] = -10000;
         }
 
@@ -325,7 +255,7 @@ public class MyBot : IChessBot{
         foreach (Move move in moves){
             nNodes++;
             board.MakeMove(move);
-            int evaluation = -AlphaBetaSearch(board, depth - 1, -30000, 30000, timer);
+            int evaluation = -AlphaBetaSearch(board, depth - 1, -20000, 20000, timer);
             board.UndoMove(move);
             //System.Console.WriteLine(depth + ". " + move);
 
@@ -336,7 +266,7 @@ public class MyBot : IChessBot{
             }
            Console.WriteLine(move + " " + evaluation);
         }
-        Console.WriteLine("BEST: " + bestMove + " " + max);
+        //Console.WriteLine("BEST: " + bestMove + " " + max);
         transpositionTable[zobristIndex] = new Entry(zobristHash, bestMove, depth, max, evaluationType);
         return bestMove;
     }
