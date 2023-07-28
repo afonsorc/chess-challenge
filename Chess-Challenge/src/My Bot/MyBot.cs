@@ -10,13 +10,10 @@ using System.Text.RegularExpressions;
 
 public class MyBot : IChessBot{
 
-
     public struct Entry{
-        public ulong key = 0;
-        public Move move = Move.NullMove;
-        public int depth = 0;
-        public int evaluation = 0;
-        public int evaluationType = 0;
+        public ulong key;
+        public Move move;
+        public int depth, evaluation, evaluationType;
     
         public Entry(ulong key, Move move, int depth, int evaluation, int evaluationType){
             this.key = key;
@@ -30,12 +27,10 @@ public class MyBot : IChessBot{
     const bool TIMER = true; 
     const int ttSize = 8388608;
     public Entry[] transpositionTable = new Entry[ttSize];
-    Move bestMoveLastIteration = Move.NullMove;
     int nNodes = 0;
-    public int nCuts = 0;
 
     // PeSTO Piece Square Table
-    int[] pieceValue = { 0, 100, 320, 340, 500, 900, 10000 };
+    readonly int[] pieceValue = { 0, 100, 320, 340, 500, 900, 10000 };
     readonly ulong[,] setPST = {{0, 3617008641903833650, 723412809732590090, 361706447983740165, 86234890240, 358869600189152005, 363113628838791685, 0},{14832572258041583566, 15558810812658215896, 16285027312364814306, 16286440206365557986, 16285032831482003426, 16286434687248368866, 14832572258041583566, 15558810834216938456},{17002766404949505516, 17726168133330272246, 17726173674006183926, 17727581048889738486, 17726179171564650486, 17728993921331759606, 17727575508213826806, 17002766404949505516},{0, 363113758191127045, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 18086456103519911931, 21558722560},{17002766426508228076, 17726168133330272246, 17726173652447461366, 18086461622637101051, 18086461622637101056, 17726173652447462646, 17726168133330599926, 17002766426508228076},{16273713057448318946, 16273713057448318946, 16273713057448318946, 16273713057448318946, 16997114785829085676, 17720516557327297526, 1446781380292776980, 1449607125176819220}};
 
 
@@ -46,7 +41,7 @@ public class MyBot : IChessBot{
         nNodes = 0;
 
         var sw = new Stopwatch();
-        Console.WriteLine((board.PlyCount + 1) / 2);
+        //Console.WriteLine((board.PlyCount + 1) / 2);
 
         int max_depth = 10;
         // Taking 00:39.748s for D7
@@ -123,22 +118,32 @@ public class MyBot : IChessBot{
         return board.IsWhiteToMove ? evaluation : -evaluation;
     }
 
+    public void OrderMoves(Move[] moves, Entry entry){
 
-    public void SortMoveList(Move[] moves, int[] score){
-        
-        for(int i = 0; i < moves.Length - 1; i++){
+        int moveCount = moves.Length;
+        int[] score = new int[moveCount];
+
+        for(int i = 0; i < moveCount; i++){
+            if(moves[i] == entry.move)
+                score[i] = 10000;         
+            else if(moves[i].IsCapture){
+                int capture = (int)moves[i].CapturePieceType;
+                int move = (int)moves[i].MovePieceType;
+                score[i] = pieceValue[capture] * capture - pieceValue[move] * move;
+            }
+            else score[i] = -10000;
+        }
+
+        for(int i = 0; i < moveCount - 1; i++){
             int biggestValue = i;
-            for(int j = i + 1; j < moves.Length; j++)
+            for(int j = i + 1; j < moveCount; j++)
                 if(score[j] > score[biggestValue]) biggestValue = j;
             if(biggestValue != i){
                 (moves[i], moves[biggestValue]) = (moves[biggestValue], moves[i]);
                 (score[i], score[biggestValue]) = (score[biggestValue], score[i]);
             }
         }
-
-        return;
     }
-
 
     public int AlphaBetaSearch(Board board, int depth, int alpha, int beta, Timer timer){
 
@@ -173,20 +178,7 @@ public class MyBot : IChessBot{
         }
 
         Move[] moves = board.GetLegalMoves(isQueiescenceSearch);
-        int[] moveScore = new int[moves.Length];
-
-        for(int i = 0; i < moves.Length; i++){
-            if(moves[i] == entry.move){
-                //System.Console.WriteLine("ENTRY: " + entry.move);
-                moveScore[i] = 10000;         
-            }
-            else if(moves[i].IsCapture) moveScore[i] = (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
-            else moveScore[i] = -10000;
-        }
-
-        SortMoveList(moves, moveScore);
-         //for(int i = 0; i < moves.Length; i++)
-           // System.Console.WriteLine(i + " " + moves[i]);
+        OrderMoves(moves, entry);
 
         int evaluationType = 1;
         Move bestMove = Move.NullMove;
@@ -224,50 +216,26 @@ public class MyBot : IChessBot{
     public Move AlphaBetaSearchRoot(Board board, int depth, Timer timer){
 
         int max = -20000;
-        
-        ulong zobristHash = board.ZobristKey;
-        ulong zobristIndex = zobristHash % ttSize;
-        Entry entry = transpositionTable[zobristIndex];
+        ulong zobristIndex = board.ZobristKey % ttSize;
 
-
-        Move[] moves = board.GetLegalMoves();
-        int[] moveScore = new int[moves.Length];
-        
-
-        int evaluationType = 1;
         Move bestMove = Move.NullMove;
+        Move[] moves = board.GetLegalMoves();
 
-        for(int i = 0; i < moves.Length; i++){
-            if(moves[i] == entry.move){
-                //System.Console.WriteLine("ENTRY: " + entry.move);
-                moveScore[i] = 10000;         
-            }
-            else if(moves[i].IsCapture){
-                int capture = (int)moves[i].CapturePieceType;
-                int move = (int)moves[i].MovePieceType;
-                moveScore[i] = pieceValue[capture] * capture - pieceValue[move] * move;
-            }
-            else moveScore[i] = -10000;
-        }
-
-        SortMoveList(moves, moveScore);
-
+        OrderMoves(moves, transpositionTable[zobristIndex]);        
         foreach (Move move in moves){
             nNodes++;
             board.MakeMove(move);
             int evaluation = -AlphaBetaSearch(board, depth - 1, -20000, 20000, timer);
             board.UndoMove(move);
-            //System.Console.WriteLine(depth + ". " + move);
 
             if(evaluation > max){
-                evaluationType = 0;
                 max = evaluation;
                 bestMove = move;
             }
-           Console.WriteLine(move + " " + evaluation);
+           //Console.WriteLine(move + " " + evaluation);
         }
         //Console.WriteLine("BEST: " + bestMove + " " + max);
-        transpositionTable[zobristIndex] = new Entry(zobristHash, bestMove, depth, max, evaluationType);
+        transpositionTable[zobristIndex] = new Entry(board.ZobristKey, bestMove, depth, max, 0);
         return bestMove;
     }
 }
